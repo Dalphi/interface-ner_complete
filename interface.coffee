@@ -186,6 +186,12 @@ class ner_complete extends AnnotationIteration
     return this.getMostOuterTokenIndexFromChunk(token.leftSiblingIndex, side) if side == 'left'
     return this.getMostOuterTokenIndexFromChunk(token.rightSiblingIndex, side) if side == 'right'
 
+  setCurrentAnnotationLength: (tokenIndex) ->
+    this.currentAnnotationLength = 0
+    modifier = (token, _) ->
+      _this.currentAnnotationLength = 1 + _this.currentAnnotationLength
+    this.tokenIterator(tokenIndex, modifier, false)
+
   changeTokenState: (tokenIndex, selected) ->
     modifier = (token, selected) ->
       token.$token.addClass('selected') if selected
@@ -236,10 +242,50 @@ class ner_complete extends AnnotationIteration
 
   saveAnnotation: ->
     # collect all the annotations from the UI and save them as payload
-      # firstToken = this.findNextChunkIndex(0, 'right')
-    # while firstToken
-    console.log 'TODO: the annotation will not be saved! (not implemented yet)'
+    console.log 'generating payload'
+    payload = {
+      content: []
+    }
 
-    this.saveChanges(window.annotationDocumentPayload)
+    $('.paragraph-container .paragraph').each (paragraphIndex, paragraphElement) ->
+      payload['content'][paragraphIndex] = []
+      $('.sentence', $(paragraphElement)).each (sentenceIndex, sentenceElement) ->
+        payload['content'][paragraphIndex][sentenceIndex] = []
+        $('.token', $(sentenceElement)).each (tokenIndex, tokenElement) ->
+          $token = $(tokenElement)
+          tokenHash = {
+            term: $token.html()
+          }
+
+          tokenId = $token.data('token-id')
+          if tokenId && _this.tokens[tokenId]
+            token = _this.tokens[tokenId]
+            _this.setCurrentAnnotationLength()
+            tokenHash['annotation'] = {
+              label: token.kind,
+              length: _this.currentAnnotationLength
+            }
+
+          payload['content'][paragraphIndex][sentenceIndex][tokenIndex] = tokenHash
+
+    console.log payload
+    # tokenIndex = -1
+    # lastKnownIndex = tokenIndex - 1
+    #
+    # while tokenIndex > lastKnownIndex
+    #   lastKnownIndex = tokenIndex
+    #   tokenIndex = this.findNextChunkIndex(tokenIndex, 'right')
+    #   token = this.tokens[tokenIndex]
+    #   next unless token
+    #   _this.setCurrentAnnotationLength()
+    #   annotation = {
+    #     label = token.kind,
+    #     length = _this.currentAnnotationLength
+    #   }
+    #   paragraphIndex = 0
+    #   sentenceIndex = 0
+    #   payload['content'][paragraphIndex][sentenceIndex]
+
+    # this.saveChanges(window.annotationDocumentPayload)
 
 window.ner_complete = new ner_complete()

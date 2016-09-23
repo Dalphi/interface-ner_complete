@@ -1,0 +1,51 @@
+<div class="row description-container">
+  <h1 class="col-xs-12 col-sm-8">Named Entity Recognition</h1>
+  <div class="col-xs-12 col-sm-4 button-container">
+    <button class="btn btn-secondary annotation-button" onclick="window.ner_complete.skip()">
+      Skip this document
+    </button>
+  </div>
+</div>
+<div class="row description-container">
+  <div class="col-xs-12 col-sm-2 marker">
+    color symbology:
+  </div>
+  <div class="col-xs-12 col-sm-10 color-symbology">
+    <span class="token PER">PER</span>
+    <span class="token COM">COM</span>
+  </div>
+</div>
+
+<div class="paragraph-container">
+  {{#content}}
+    <div class="row">
+      <div class="col-xs-12 col-sm-2 hidden-xs-down marker">
+        paragraph:
+      </div>
+      <div class="col-xs-12 col-sm-8 paragraph">
+        {{#.}}
+          <div class="sentence">
+            {{#.}}
+              {{#annotation}}
+                <span class="token {{annotation.label}}" data-token-length="{{annotation.length}}">
+                  {{term}}
+                </span>
+              {{/annotation}}
+              {{^annotation}}
+                <span class="token">
+                  {{term}}
+                </span>
+              {{/annotation}}
+            {{/.}}
+          </div>
+        {{/.}}
+      </div>
+    </div>
+  {{/content}}
+</div>
+
+<div class="col-xs-12 col-sm-4 offset-sm-8 button-container">
+  <button class="btn btn-secondary annotation-button" onclick="window.ner_complete.saveAnnotation()">
+    Save annotation
+  </button>
+</div>

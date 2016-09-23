@@ -1,0 +1,26 @@
+{
+  "content":[
+    [
+      [
+        {"term":"One"},
+        {"term":"sentence"},
+        {"term":"."}
+      ],
+      [
+        {"term":"Another"},
+        {"term":"one"},
+        {"term":","},
+        {"term":"same"},
+        {"term":"paragraph"},
+        {"term":"."}
+      ]
+    ],
+    [
+      [
+        {"term":"Another"},
+        {"term":"paragraph"},
+        {"term":"."}
+      ]
+    ]
+  ]
+}

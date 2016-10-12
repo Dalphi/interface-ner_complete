@@ -14,7 +14,6 @@ class ner_complete extends AnnotationIteration
 
     # iterate over all tokens and save them in an array
     this.initTokens()
-    console.log this.tokens
 
     $(document).keydown (e) ->
       returnStatement = true
@@ -202,7 +201,6 @@ class ner_complete extends AnnotationIteration
   changeTokenKind: (kind) ->
     return if this.selectedTokenIndex < 0
 
-    console.log "change token kind to '#{kind}'"
     modifier = (token, kind) ->
       unless token.kind == kind
         token.kind = kind
@@ -239,7 +237,6 @@ class ner_complete extends AnnotationIteration
 
   render: (template, data) ->
     window.annotationDocumentPayload = data
-    console.log 'render interface with payload:', data
     super
 
   saveAnnotation: ->
@@ -275,7 +272,6 @@ class ner_complete extends AnnotationIteration
 
           payload['content'][paragraphIndex][sentenceIndex].push(tokenHash)
 
-    console.log 'save payload:', payload
     this.saveChanges(payload)
 
 window.ner_complete = new ner_complete()

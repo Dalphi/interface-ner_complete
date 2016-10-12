@@ -1,11 +1,12 @@
 class ner_complete extends AnnotationIteration
 
   _this = undefined
+  tokensQuery = '.interfaces-staging >:not(.template) .paragraph-container .token'
 
   # uncomment to overwrite interface registration at AnnotationLifecylce
   constructor: ->
     _this = this
-    this.$tokens = $('.paragraph-container .token')
+    this.$tokens = $(tokensQuery)
     this.tokens = []
     this.selectedTokenIndex = -1
     this.knownKeys = [8, 9, 16, 37, 39, 49, 50]
@@ -13,7 +14,6 @@ class ner_complete extends AnnotationIteration
 
     # iterate over all tokens and save them in an array
     this.initTokens()
-    console.log this.tokens
 
     $(document).keydown (e) ->
       returnStatement = true
@@ -36,7 +36,7 @@ class ner_complete extends AnnotationIteration
       if tokenIndex >= 0
         _this.selectChunkWithTokenIndex(tokenIndex)
       else
-        jQueryIndex = $clickedToken.index('.paragraph-container .token')
+        jQueryIndex = $clickedToken.index(tokensQuery)
         _this.addNewToken($clickedToken, jQueryIndex)
 
     super
@@ -165,11 +165,11 @@ class ner_complete extends AnnotationIteration
       mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(startIndex, side)
       queryString = ":gt(#{mostOuterTokenListIndex}).left-end:first" if side == 'right'
       queryString = ":lt(#{mostOuterTokenListIndex}).right-end:last" if side == 'left'
-      nextChunkId = $(".paragraph-container .token#{queryString}").data('token-id')
+      nextChunkId = $("#{tokensQuery}#{queryString}").data('token-id')
 
     unless nextChunkId
-      queryString = '.paragraph-container .token.left-end:first' if side == 'right'
-      queryString = '.paragraph-container .token.left-end:last' if side == 'left'
+      queryString = "#{tokensQuery}.left-end:first" if side == 'right'
+      queryString = "#{tokensQuery}.left-end:last" if side == 'left'
       nextChunkId = $(queryString).data('token-id')
 
     return nextChunkId
@@ -186,6 +186,12 @@ class ner_complete extends AnnotationIteration
     return this.getMostOuterTokenIndexFromChunk(token.leftSiblingIndex, side) if side == 'left'
     return this.getMostOuterTokenIndexFromChunk(token.rightSiblingIndex, side) if side == 'right'
 
+  setCurrentAnnotationLength: (tokenIndex) ->
+    this.currentAnnotationLength = 0
+    modifier = (token, _) ->
+      _this.currentAnnotationLength = 1 + _this.currentAnnotationLength
+    this.tokenIterator(tokenIndex, modifier, false)
+
   changeTokenState: (tokenIndex, selected) ->
     modifier = (token, selected) ->
       token.$token.addClass('selected') if selected
@@ -195,7 +201,6 @@ class ner_complete extends AnnotationIteration
   changeTokenKind: (kind) ->
     return if this.selectedTokenIndex < 0
 
-    console.log "change token kind to '#{kind}'"
     modifier = (token, kind) ->
       unless token.kind == kind
         token.kind = kind
@@ -236,10 +241,37 @@ class ner_complete extends AnnotationIteration
 
   saveAnnotation: ->
     # collect all the annotations from the UI and save them as payload
-      # firstToken = this.findNextChunkIndex(0, 'right')
-    # while firstToken
-    console.log 'TODO: the annotation will not be saved! (not implemented yet)'
+    $paragraphs = $('.interfaces-staging >:not(.template) .paragraph-container .paragraph')
+    payload = {
+      content: new Array()
+    }
+    this.tokenSkipCount = 0
 
-    this.saveChanges(window.annotationDocumentPayload)
+    $paragraphs.each (paragraphIndex, paragraphElement) ->
+      payload['content'].push(new Array())
+      $('.sentence', $(paragraphElement)).each (sentenceIndex, sentenceElement) ->
+        payload['content'][paragraphIndex].push(new Array())
+        $('.token', $(sentenceElement)).each (tokenIndex, tokenElement) ->
+          $token = $(tokenElement)
+          tokenHash = {
+            term: $token.html().replace(/^\s+|\s+$/g, '')
+          }
+
+          tokenId = $token.data('token-id')
+          if tokenId && _this.tokenSkipCount == 0
+            _this.setCurrentAnnotationLength(tokenId)
+            _this.tokenSkipCount = _this.currentAnnotationLength
+
+            tokenHash['annotation'] = {
+              label: _this.tokens[tokenId].kind,
+              length: _this.currentAnnotationLength
+            }
+
+          else if _this.tokenSkipCount > 0
+            _this.tokenSkipCount = _this.tokenSkipCount - 1
+
+          payload['content'][paragraphIndex][sentenceIndex].push(tokenHash)
+
+    this.saveChanges(payload)
 
 window.ner_complete = new ner_complete()

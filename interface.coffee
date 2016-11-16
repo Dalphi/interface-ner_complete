@@ -9,7 +9,7 @@ class ner_complete extends AnnotationIteration
     this.$tokens = $(tokensQuery)
     this.tokens = []
     this.selectedTokenIndex = -1
-    this.knownKeys = [8, 9, 16, 37, 39, 49, 50]
+    this.knownKeys = [8, 9, 16, 37, 39, 49, 50, 106, 107]
     this.keyMap = []
 
     # iterate over all tokens and save them in an array
@@ -92,6 +92,8 @@ class ner_complete extends AnnotationIteration
       _this.addTokenToChunk('left') if keyIsPressed(37) # key '<-'
       _this.addTokenToChunk('right') if keyIsPressed(39) # key '->'
       _this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
+      _this.saveAnnotation() if keyIsPressed(106) # key 'J'
+      _this.skip() if keyIsPressed(107) # key 'K'
 
   addTokenToChunk: (side) ->
     mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
@@ -258,7 +260,7 @@ class ner_complete extends AnnotationIteration
           }
 
           tokenId = $token.data('token-id')
-          if tokenId && _this.tokenSkipCount == 0
+          if tokenId >= 0 && _this.tokenSkipCount == 0
             _this.setCurrentAnnotationLength(tokenId)
             _this.tokenSkipCount = _this.currentAnnotationLength
 

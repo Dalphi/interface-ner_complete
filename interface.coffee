@@ -9,21 +9,23 @@ class ner_complete extends AnnotationIteration
     this.$tokens = $(tokensQuery)
     this.tokens = []
     this.selectedTokenIndex = -1
-    this.knownKeys = [8, 9, 16, 37, 39, 49, 50]
+    this.knownKeys = [8, 9, 16, 37, 39, 49, 50, 74, 75]
     this.keyMap = []
 
     # iterate over all tokens and save them in an array
     this.initTokens()
 
+    $(document).unbind 'keydown'
     $(document).keydown (e) ->
       returnStatement = true
       returnStatement = false if _this.knownKeys.indexOf(e.keyCode) >= 0
-
       return returnStatement unless _this.keyMap.indexOf(e.keyCode) == -1
+
       _this.keyMap.push(e.keyCode)
       _this.actionFromKeyEvent()
       return returnStatement
 
+    $(document).unbind 'keyup'
     $(document).keyup (e) ->
       keyMapIndex = _this.keyMap.indexOf(e.keyCode)
       _this.keyMap.splice(keyMapIndex)
@@ -71,10 +73,14 @@ class ner_complete extends AnnotationIteration
           }
 
   actionFromKeyEvent: ->
-    return if this.selectedTokenIndex < 0
-
     keyIsPressed = (keyId) ->
       _this.keyMap.indexOf(keyId) >= 0
+
+    _this.saveAnnotation() if keyIsPressed(74) # key 'j'
+    _this.skip() if keyIsPressed(75) # key 'k'
+
+    # all other bindings require a token to be selected
+    return if this.selectedTokenIndex < 0
 
     # backspace
     if keyIsPressed(8)
@@ -258,10 +264,11 @@ class ner_complete extends AnnotationIteration
           }
 
           tokenId = $token.data('token-id')
-          if tokenId && _this.tokenSkipCount == 0
+          if tokenId >= 0 && _this.tokenSkipCount == 0
             _this.setCurrentAnnotationLength(tokenId)
             _this.tokenSkipCount = _this.currentAnnotationLength
 
+            console.log 'tokenId', tokenId
             tokenHash['annotation'] = {
               label: _this.tokens[tokenId].kind,
               length: _this.currentAnnotationLength

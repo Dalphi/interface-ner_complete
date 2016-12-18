@@ -197,6 +197,7 @@ class ner_complete extends AnnotationIteration
     modifier = (token, _) ->
       _this.currentAnnotationLength = 1 + _this.currentAnnotationLength
     this.tokenIterator(tokenIndex, modifier, false)
+    this.currentAnnotationLength
 
   changeTokenState: (tokenIndex, selected) ->
     modifier = (token, selected) ->
@@ -252,12 +253,13 @@ class ner_complete extends AnnotationIteration
       content: new Array()
     }
     this.tokenSkipCount = 0
+    annotatedTokens = [] # debug
 
     $paragraphs.each (paragraphIndex, paragraphElement) ->
       payload['content'].push(new Array())
       $('.sentence', $(paragraphElement)).each (sentenceIndex, sentenceElement) ->
         payload['content'][paragraphIndex].push(new Array())
-        $('.token', $(sentenceElement)).each (tokenIndex, tokenElement) ->
+        $('.token', $(sentenceElement)).each (_, tokenElement) ->
           $token = $(tokenElement)
           tokenHash = {
             term: $token.html().replace(/^\s+|\s+$/g, '')
@@ -265,20 +267,19 @@ class ner_complete extends AnnotationIteration
 
           tokenId = $token.data('token-id')
           if tokenId >= 0 && _this.tokenSkipCount == 0
-            _this.setCurrentAnnotationLength(tokenId)
-            _this.tokenSkipCount = _this.currentAnnotationLength
-
-            console.log 'tokenId', tokenId
+            _this.tokenSkipCount = (_this.setCurrentAnnotationLength(tokenId) - 1)
             tokenHash['annotation'] = {
               label: _this.tokens[tokenId].kind,
               length: _this.currentAnnotationLength
             }
+            annotatedTokens.push(tokenHash) # debug
 
           else if _this.tokenSkipCount > 0
             _this.tokenSkipCount = _this.tokenSkipCount - 1
 
           payload['content'][paragraphIndex][sentenceIndex].push(tokenHash)
 
+    console.log annotatedTokens.length, 'annotated tokens:', annotatedTokens # debug
     this.saveChanges(payload)
 
 window.ner_complete = new ner_complete()

@@ -120,20 +120,12 @@ class ner_complete extends AnnotationIteration
     # find first / last and check if one or both belong to a chunk (and get real first / last indices)
     if clickedTokenIndex < hoveredTokenIndex
       firstIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'left')
-      lastIndex = this.getMostOuterTokenIndexFromChunk(hoveredTokenIndex, 'right')
+      lastIndex = hoveredTokenIndex
     else
-      firstIndex = this.getMostOuterTokenIndexFromChunk(hoveredTokenIndex, 'left')
+      firstIndex = hoveredTokenIndex
       lastIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'right')
 
-    console.log 'token chain between:',
-                firstIndex,
-                lastIndex,
-                [this.tokens[firstIndex], this.tokens[lastIndex]],
-                'same chunk:',
-                this.tokensBelongToSameChunk(firstIndex, lastIndex)
-
     # remove clicked chunk and hovered chunk
-    # idea: use hoveredToken instead of first / last if chunk shrinking does not work
     this.removeChunkWithIndex(this.selectedTokenIndex)
     unless this.tokensBelongToSameChunk(firstIndex, lastIndex)
       this.removeChunkWithStartIndex(firstIndex) if clickedTokenIndex < hoveredTokenIndex

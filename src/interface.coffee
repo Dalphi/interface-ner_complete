@@ -152,6 +152,7 @@ class ner_complete extends AnnotationIteration
 
     mostOuterToken.$token.removeClass("#{side}-end")
     $token = $(this.$tokens.get(targetIndex))
+    this.removeChunkWithIndex(targetIndex) if $token.data('token-id') >= 0
     $token.addClass("selected #{side}-end")
 
     if side == 'left'

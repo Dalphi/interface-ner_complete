@@ -50,7 +50,7 @@ class ner_complete extends AnnotationIteration
           }
 
   initKeyboardEventHandler: ->
-    $(document).unbind 'keydown'
+    $(document).off 'keydown'
     $(document).keydown (e) ->
       returnStatement = true
       returnStatement = false if _this.knownKeys.indexOf(e.keyCode) >= 0
@@ -60,7 +60,7 @@ class ner_complete extends AnnotationIteration
       _this.actionFromKeyEvent()
       return returnStatement
 
-    $(document).unbind 'keyup'
+    $(document).off 'keyup'
     $(document).keyup (e) ->
       keyMapIndex = _this.keyMap.indexOf(e.keyCode)
       _this.keyMap.splice(keyMapIndex)
@@ -68,24 +68,20 @@ class ner_complete extends AnnotationIteration
   initMouseEventHandler: ->
     $('.interfaces-staging .token').mousedown (e) ->
       $clickedToken = $(this)
-      # # handle the click on a already known token
-      # _this.selectChunkWithToken($clickedToken) if _this.tokenIsChunk($clickedToken)
-      # # or add a yet unknown token
-      # _this.createChunkFromToken($clickedToken) unless _this.tokenIsChunk($clickedToken)
-
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
       _this.currentDraggingStartedAtTokenIndex = clickedTokenIndex
 
-      $('.token', $clickedToken.parent()).hover ->
+      $('.token', $clickedToken.parent()).mouseenter ->
         return if _this.currentDraggingStartedAtTokenIndex < 0
         hoveredTokenIndex = _this.selectChunkWithToken($(this))
         _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex)
 
     $('body').mouseup (e) ->
       console.log 'mouse released'
-      $(document).unbind 'mousedown'
-      $(document).unbind 'hover'
-      _this.currentDraggingStartedAtTokenIndex = -1
+      if _this.currentDraggingStartedAtTokenIndex >= 0
+        $parent = _this.tokens[_this.currentDraggingStartedAtTokenIndex].$token.parent()
+        $('.token', $parent).off 'mouseenter'
+        _this.currentDraggingStartedAtTokenIndex = -1
 
   actionFromKeyEvent: ->
     keyIsPressed = (keyId) ->
@@ -99,7 +95,7 @@ class ner_complete extends AnnotationIteration
 
     # backspace
     if keyIsPressed(8)
-      _this.removeCurrentChunk()
+      _this.removeChunkWithIndex(this.selectedTokenIndex)
 
     # shift
     if keyIsPressed(16)
@@ -134,16 +130,14 @@ class ner_complete extends AnnotationIteration
 
     # remove clicked chunk and hovered chunk
     # idea: use hoveredToken instead of first / last if chunk shrinking does not work
-    this.removeCurrentChunk()
+    this.removeChunkWithIndex(this.selectedTokenIndex)
     unless this.tokensBelongToSameChunk(firstIndex, lastIndex)
       this.removeChunkWithStartIndex(firstIndex) if clickedTokenIndex < hoveredTokenIndex
+      this.removeChunkWithIndex(lastIndex) if clickedTokenIndex > hoveredTokenIndex
 
     # build chunk from start to end
-    this.selectChunkWithTokenIndex(firstIndex)
-    # this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)]
-
-    # TODO:
-    # - highlight chunk
+    this.addNewToken(this.tokens[firstIndex].$token, firstIndex)
+    this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)]
 
   addTokenToChunk: (side) ->
     mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
@@ -197,8 +191,8 @@ class ner_complete extends AnnotationIteration
     mostOuterToken.$token.removeClass('selected')
     this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == mostOuterTokenListIndex
 
-  removeCurrentChunk: ->
-    mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, 'left')
+  removeChunkWithIndex: (tokenIndex) ->
+    mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(tokenIndex, 'left')
     this.removeChunkWithStartIndex(mostOuterTokenListIndex)
 
   removeChunkWithStartIndex: (mostOuterTokenListIndex) ->

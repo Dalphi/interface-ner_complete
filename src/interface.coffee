@@ -71,7 +71,9 @@ class ner_complete extends AnnotationIteration
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
       _this.currentDraggingStartedAtTokenIndex = clickedTokenIndex
 
-      $('.token', $clickedToken.parent()).mouseenter ->
+      $chainableTokens = $('.token', $clickedToken.parent())
+      $chainableTokens.css('cursor', 'crosshair')
+      $chainableTokens.mouseenter ->
         return if _this.currentDraggingStartedAtTokenIndex < 0
         hoveredTokenIndex = _this.selectChunkWithToken($(this))
         _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex)
@@ -80,7 +82,9 @@ class ner_complete extends AnnotationIteration
       console.log 'mouse released'
       if _this.currentDraggingStartedAtTokenIndex >= 0
         $parent = _this.tokens[_this.currentDraggingStartedAtTokenIndex].$token.parent()
-        $('.token', $parent).off 'mouseenter'
+        $chainableTokens = $('.token', $parent)
+        $chainableTokens.css('cursor', 'pointer')
+        $chainableTokens.off 'mouseenter'
         _this.currentDraggingStartedAtTokenIndex = -1
 
   actionFromKeyEvent: ->

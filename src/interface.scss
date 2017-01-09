@@ -34,7 +34,9 @@
 
 .token {
   cursor: pointer;
+  display: inline-block;
   padding: 0 0 0 2px;
+  position: relative;
 
   &:not(.COM):not(.PER):hover {
     background-color: #ffffff;
@@ -63,10 +65,24 @@
 
     &.left-end {
       border-left: 1px solid #f03232;
+
+      .chunk-size-handle-left {
+        border: 1px solid #8a8a8a;
+        height: 7px;
+        left: -5px;
+        width: 7px;
+      }
     }
 
     &.right-end {
       border-right: 1px solid #f03232;
+
+      .chunk-size-handle-right {
+        border: 1px solid #8a8a8a;
+        height: 7px;
+        right: -5px;
+        width: 7px;
+      }
     }
   }
 
@@ -80,5 +96,12 @@
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
     padding-right: 2px;
+  }
+
+  .chunk-size-handle-left,
+  .chunk-size-handle-right {
+    background-color: #ffffff;
+    position: absolute;
+    top: calc(50% - 3px);
   }
 }

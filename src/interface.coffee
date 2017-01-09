@@ -241,6 +241,7 @@ class ner_complete extends AnnotationIteration
     _this.selectChunkWithTokenIndex(tokenIndex)
 
   selectChunkWithTokenIndex: (index) ->
+    # $('.chunk-size-handle-left, .chunk-size-handle-right').remove()
     this.changeTokenState(this.selectedTokenIndex, false)
     this.changeTokenState(index, true)
     this.selectedTokenIndex = index
@@ -261,6 +262,10 @@ class ner_complete extends AnnotationIteration
 
   changeTokenState: (tokenIndex, selected) ->
     modifier = (token, selected) ->
+      # if selected
+      #   token.$token.addClass('selected')
+      #   if token.leftSiblingIndex < 0
+      #     token.$token.append('<div></div>')
       token.$token.addClass('selected') if selected
       token.$token.removeClass('selected') unless selected
     this.tokenIterator(tokenIndex, modifier, selected)

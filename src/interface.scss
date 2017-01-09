@@ -32,10 +32,16 @@
   }
 }
 
+.sentence {
+  font-size: 0;
+}
+
 .token {
   cursor: pointer;
   display: inline-block;
-  padding: 0 0 0 2px;
+  font-size: 1rem;
+  margin: 1px 0;
+  padding: 0 2px 0 2px;
   position: relative;
 
   &:not(.COM):not(.PER):hover {
@@ -59,49 +65,56 @@
     }
   }
 
+  &.left-end {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    margin-left: 4px;
+    padding-left: 5px;
+  }
+
+  &.right-end {
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
+    margin-right: 4px;
+    padding-right: 5px;
+  }
+
+  .chunk-size-handle-left,
+  .chunk-size-handle-right {
+    background-color: #ffffff;
+    cursor: ew-resize;
+    position: absolute;
+    top: calc(50% - 3px);
+  }
+
   &.selected {
     border-top: 1px solid #f03232;
     border-bottom: 1px solid #f03232;
+    margin-bottom: 0;
+    margin-top: 0;
 
     &.left-end {
       border-left: 1px solid #f03232;
+      margin-left: 3px;
 
       .chunk-size-handle-left {
         border: 1px solid #8a8a8a;
         height: 7px;
-        left: -5px;
+        left: -4px;
         width: 7px;
       }
     }
 
     &.right-end {
       border-right: 1px solid #f03232;
+      margin-right: 3px;
 
       .chunk-size-handle-right {
         border: 1px solid #8a8a8a;
         height: 7px;
-        right: -5px;
+        right: -4px;
         width: 7px;
       }
     }
-  }
-
-  &.left-end {
-    border-top-left-radius: 5px;
-    border-bottom-left-radius: 5px;
-    padding-left: 4px;
-  }
-
-  &.right-end {
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
-    padding-right: 2px;
-  }
-
-  .chunk-size-handle-left,
-  .chunk-size-handle-right {
-    background-color: #ffffff;
-    position: absolute;
-    top: calc(50% - 3px);
   }
 }

@@ -51,6 +51,8 @@ class ner_complete extends AnnotationIteration
             leftSiblingIndex: index
           }
 
+    this.selectNextChunkFromStartIndex(0) # select the first chunk
+
   initKeyboardEventHandler: ->
     $(document).off 'keydown'
     $(document).keydown (e) ->
@@ -230,10 +232,16 @@ class ner_complete extends AnnotationIteration
         leftSibling.rightSiblingIndex = -1
       leftSiblingIndex = -1
     this.tokenIterator(mostOuterTokenIndex, modifier, false, false, true)
+    this.selectNextChunkFromStartIndex(mostOuterTokenIndex)
 
   selectNextChunk: (side) ->
     nextChunkId = this.findNextChunkIndex(this.selectedTokenIndex, side)
     this.selectChunkWithTokenIndex(nextChunkId)
+
+  selectNextChunkFromStartIndex: (index, side='right') ->
+    nextIndex = this.findNextChunkIndex(index, side)
+    this.selectChunkWithTokenIndex(nextIndex) if nextIndex
+    this.selectedTokenIndex = -1 unless nextIndex
 
   findNextChunkIndex: (startIndex, side) ->
     if this.tokens[startIndex]

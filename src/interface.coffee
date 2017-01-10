@@ -69,39 +69,47 @@ class ner_complete extends AnnotationIteration
 
   initMouseEventHandler: ->
     $('.interfaces-staging .token').mousedown ->
-      return if _this.preventClickOnToken
+      # return if _this.preventClickOnToken
       $clickedToken = $(this)
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
       _this.currentDraggingStartedAtTokenIndex = clickedTokenIndex
 
       $chainableTokens = $('.token', $clickedToken.parent())
-      $chainableTokens.mouseenter ->
-        return if _this.currentDraggingStartedAtTokenIndex < 0
-        _this.registerEventListener($chainableTokens, 'mouseenter')
-        hoveredTokenIndex = _this.selectChunkWithToken($(this))
-        _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex)
-
-    $('.token .chunk-size-handle-left').mousedown ->
-      _this.preventClickOnToken = true
-      $clickedHandle = $(this)
-      $clickedToken = $clickedHandle.parent()
-      $chainableTokens = $('.token', $clickedToken.parent())
       $chainableTokens.css('cursor', 'ew-resize')
 
-      # case 1: move to the left
+      $leftHandle = $clickedToken.find('.chunk-size-handle-left')
+      $rightHandle = $clickedToken.find('.chunk-size-handle-right')
+      if $leftHandle.is(':hover') || $rightHandle.is(':hover')
+        # the left or right handle is clicked; remove or append tokens
+        if $leftHandle.is(':hover')
+          side = 'left'
+          $clickedHandle = $leftHandle
+        else
+          side = 'right'
+          $clickedHandle = $rightHandle
 
-      # case 2: move to the right;
-      $clickedHandle.mouseout ->
-        _this.registerEventListener($(this), 'mouseout')
-        $deletableTokens = _this.selectionOfDeletableTokensFrom('left')
-        return unless $deletableTokens
+        # case 1: move to the left
 
-        $deletableTokens.mousemove ->
-          _this.registerEventListener($deletableTokens, 'mousemove')
+        # case 2: shrink the chunk;
+        $clickedHandle.mouseout ->
+          _this.registerEventListener($(this), 'mouseout')
+          $deletableTokens = _this.selectionOfDeletableTokensFrom(side)
+          return unless $deletableTokens
 
-          if !$clickedHandle.is(':hover')
-            _this.removeTokenFromChunk('left')
-            $(this).off 'mousemove'
+          $deletableTokens.mousemove ->
+            _this.registerEventListener($deletableTokens, 'mousemove')
+
+            if !$clickedHandle.is(':hover')
+              _this.removeTokenFromChunk(side)
+              $(this).off 'mousemove'
+
+      else
+        # a token in the current chunk is clicked; dragging recreates the current chunk
+        $chainableTokens.mouseenter ->
+          return if _this.currentDraggingStartedAtTokenIndex < 0
+          _this.registerEventListener($chainableTokens, 'mouseenter')
+          hoveredTokenIndex = _this.selectChunkWithToken($(this))
+          _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex)
 
     $('body').mouseup (e) ->
       console.log 'mouse released'
@@ -138,8 +146,6 @@ class ner_complete extends AnnotationIteration
       _this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
 
   createChunkWithTokens: (clickedTokenIndex, hoveredTokenIndex, newSelection=true) ->
-    return if clickedTokenIndex == hoveredTokenIndex
-
     # find first / last and check if one or both belong to a chunk (and get real first / last indices)
     if clickedTokenIndex < hoveredTokenIndex
       firstIndex = clickedTokenIndex if newSelection
@@ -158,7 +164,7 @@ class ner_complete extends AnnotationIteration
 
     # build chunk from start to end
     this.addNewToken(this.tokens[firstIndex].$token, firstIndex)
-    this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)]
+    this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)] unless firstIndex == lastIndex
 
   addTokenToChunk: (side) ->
     mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)

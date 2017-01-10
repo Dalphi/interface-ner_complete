@@ -26,16 +26,18 @@
         {{#.}}
           <div class="sentence">
             {{#.}}
+
               {{#annotation}}
-                <span class="token {{annotation.label}}" data-token-length="{{annotation.length}}">
-                  {{term}}
-                </span>
+              <div class="token {{annotation.label}}" data-token-length="{{annotation.length}}">
               {{/annotation}}
               {{^annotation}}
-                <span class="token">
-                  {{term}}
-                </span>
+              <div class="token">
               {{/annotation}}
+                <div class="chunk-size-handle-left"></div>
+                {{term}}
+                <div class="chunk-size-handle-right"></div>
+              </div>
+
             {{/.}}
           </div>
         {{/.}}

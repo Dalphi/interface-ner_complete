@@ -12,6 +12,8 @@ class ner_complete extends AnnotationIteration
     this.knownKeys = [8, 9, 16, 37, 39, 49, 50, 74, 75]
     this.keyMap = []
     this.currentDraggingStartedAtTokenIndex = -1
+    this.preventClickOnToken = false
+    this.registeredEventListeners = []
 
     # iterate over all tokens and save them in an array
     this.initTokens()
@@ -66,26 +68,52 @@ class ner_complete extends AnnotationIteration
       _this.keyMap.splice(keyMapIndex)
 
   initMouseEventHandler: ->
-    $('.interfaces-staging .token').mousedown (e) ->
+    $('.interfaces-staging .token').mousedown ->
       $clickedToken = $(this)
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
+      $leftHandle = $clickedToken.find('.chunk-size-handle-left')
+      $rightHandle = $clickedToken.find('.chunk-size-handle-right')
+      resizeHandleIsInUse = $leftHandle.is(':hover') || $rightHandle.is(':hover')
       _this.currentDraggingStartedAtTokenIndex = clickedTokenIndex
-
       $chainableTokens = $('.token', $clickedToken.parent())
-      $chainableTokens.css('cursor', 'crosshair')
+      $chainableTokens.css('cursor', 'ew-resize')
+
+      if resizeHandleIsInUse # the left or right handle is to shrink the chunk
+        if $leftHandle.is(':hover')
+          side = 'left'
+          $clickedHandle = $leftHandle
+        else
+          side = 'right'
+          $clickedHandle = $rightHandle
+
+        _this.registerEventListener($clickedHandle, 'mouseout')
+        $clickedHandle.mouseout ->
+          $deletableTokens = _this.selectionOfDeletableTokensFrom(side)
+          return unless $deletableTokens
+
+          _this.registerEventListener($deletableTokens, 'mousemove')
+          $deletableTokens.mousemove ->
+            if !$clickedHandle.is(':hover')
+              _this.removeTokenFromChunk(side)
+              $(this).off 'mousemove'
+
+      # expand the chunk / a token in the current chunk is clicked; dragging recreates the current chunk
+      _this.registerEventListener($chainableTokens, 'mouseenter')
       $chainableTokens.mouseenter ->
         return if _this.currentDraggingStartedAtTokenIndex < 0
+        if resizeHandleIsInUse
+          clickedTokenIndex = _this.getMostOuterTokenIndexFromChunk(
+            _this.selectedTokenIndex,
+            _this.theOtherWayAround(side)
+          )
         hoveredTokenIndex = _this.selectChunkWithToken($(this))
-        _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex)
+        _this.createChunkWithTokens(clickedTokenIndex, hoveredTokenIndex, !resizeHandleIsInUse)
 
     $('body').mouseup (e) ->
-      console.log 'mouse released'
-      if _this.currentDraggingStartedAtTokenIndex >= 0
-        $parent = _this.tokens[_this.currentDraggingStartedAtTokenIndex].$token.parent()
-        $chainableTokens = $('.token', $parent)
-        $chainableTokens.css('cursor', 'pointer')
-        $chainableTokens.off 'mouseenter'
-        _this.currentDraggingStartedAtTokenIndex = -1
+      _this.removeRegisteredEventListeners()
+      _this.$tokens.css('cursor', 'crosshair')
+      _this.preventClickOnToken = false
+      _this.currentDraggingStartedAtTokenIndex = -1
 
   actionFromKeyEvent: ->
     keyIsPressed = (keyId) ->
@@ -114,32 +142,32 @@ class ner_complete extends AnnotationIteration
       _this.addTokenToChunk('right') if keyIsPressed(39) # key '->'
       _this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
 
-  createChunkWithTokens: (clickedTokenIndex, hoveredTokenIndex) ->
-    return if clickedTokenIndex == hoveredTokenIndex
-
+  createChunkWithTokens: (clickedTokenIndex, hoveredTokenIndex, newSelection=true) ->
     # find first / last and check if one or both belong to a chunk (and get real first / last indices)
     if clickedTokenIndex < hoveredTokenIndex
-      firstIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'left')
+      firstIndex = clickedTokenIndex if newSelection
+      firstIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'left') unless newSelection
       lastIndex = hoveredTokenIndex
     else
       firstIndex = hoveredTokenIndex
-      lastIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'right')
+      lastIndex = clickedTokenIndex if newSelection
+      lastIndex = this.getMostOuterTokenIndexFromChunk(clickedTokenIndex, 'right') unless newSelection
 
     # remove clicked chunk and hovered chunk
     this.removeChunkWithIndex(this.selectedTokenIndex)
     unless this.tokensBelongToSameChunk(firstIndex, lastIndex)
-      this.removeChunkWithStartIndex(firstIndex) if clickedTokenIndex < hoveredTokenIndex
+      this.removeChunkWithIndex(firstIndex) if clickedTokenIndex < hoveredTokenIndex
       this.removeChunkWithIndex(lastIndex) if clickedTokenIndex > hoveredTokenIndex
 
     # build chunk from start to end
     this.addNewToken(this.tokens[firstIndex].$token, firstIndex)
-    this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)]
+    this.addTokenToChunk('right') for [1..(lastIndex - firstIndex)] unless firstIndex == lastIndex
 
   addTokenToChunk: (side) ->
-    mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
-    mostOuterToken = this.tokens[mostOuterTokenListIndex]
+    mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
+    mostOuterToken = this.tokens[mostOuterTokenIndex]
     kind = mostOuterToken.kind
-    targetIndex = if side == 'left' then mostOuterTokenListIndex - 1 else mostOuterTokenListIndex + 1
+    targetIndex = if side == 'left' then mostOuterTokenIndex - 1 else mostOuterTokenIndex + 1
     return if targetIndex < 0 || targetIndex >= this.$tokens.length
 
     mostOuterToken.$token.removeClass("#{side}-end")
@@ -150,12 +178,12 @@ class ner_complete extends AnnotationIteration
     if side == 'left'
       _this.addTokenToList($token, kind, targetIndex, -1)
       mostOuterToken.leftSiblingIndex = targetIndex
-      this.tokens[targetIndex].rightSiblingIndex = mostOuterTokenListIndex
+      this.tokens[targetIndex].rightSiblingIndex = mostOuterTokenIndex
 
     else if side == 'right'
-      _this.addTokenToList($token, kind, targetIndex, mostOuterTokenListIndex)
+      _this.addTokenToList($token, kind, targetIndex, mostOuterTokenIndex)
       mostOuterToken.rightSiblingIndex = targetIndex
-      this.tokens[targetIndex].leftSiblingIndex = mostOuterTokenListIndex
+      this.tokens[targetIndex].leftSiblingIndex = mostOuterTokenIndex
 
   addNewToken: ($token, index) ->
     _this.addTokenToList($token, 'PER', index, -1)
@@ -166,8 +194,8 @@ class ner_complete extends AnnotationIteration
     this.changeTokenState(this.selectedTokenIndex, true)
 
   removeTokenFromChunk: (side) ->
-    mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
-    mostOuterToken = this.tokens[mostOuterTokenListIndex]
+    mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, side)
+    mostOuterToken = this.tokens[mostOuterTokenIndex]
     return if mostOuterToken.leftSiblingIndex < 0 && mostOuterToken.rightSiblingIndex < 0
 
     if side == 'left'
@@ -186,13 +214,13 @@ class ner_complete extends AnnotationIteration
 
     mostOuterToken.$token.removeClass(mostOuterToken.kind)
     mostOuterToken.$token.removeClass('selected')
-    this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == mostOuterTokenListIndex
+    this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == mostOuterTokenIndex
 
   removeChunkWithIndex: (tokenIndex) ->
-    mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(tokenIndex, 'left')
-    this.removeChunkWithStartIndex(mostOuterTokenListIndex)
+    mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(tokenIndex, 'left')
+    this.removeChunkWithStartIndex(mostOuterTokenIndex)
 
-  removeChunkWithStartIndex: (mostOuterTokenListIndex) ->
+  removeChunkWithStartIndex: (mostOuterTokenIndex) ->
     modifier = (token, selected) ->
       token.$token.removeClass('PER COM left-end right-end selected')
       token.$token.data('token-id', -1)
@@ -201,7 +229,7 @@ class ner_complete extends AnnotationIteration
         leftSibling = _this.tokens[leftSiblingIndex]
         leftSibling.rightSiblingIndex = -1
       leftSiblingIndex = -1
-    this.tokenIterator(mostOuterTokenListIndex, modifier, false, false, true)
+    this.tokenIterator(mostOuterTokenIndex, modifier, false, false, true)
 
   selectNextChunk: (side) ->
     nextChunkId = this.findNextChunkIndex(this.selectedTokenIndex, side)
@@ -209,21 +237,34 @@ class ner_complete extends AnnotationIteration
 
   findNextChunkIndex: (startIndex, side) ->
     if this.tokens[startIndex]
-      mostOuterTokenListIndex = this.getMostOuterTokenIndexFromChunk(startIndex, side)
-      queryString = ":gt(#{mostOuterTokenListIndex}).left-end:first" if side == 'right'
-      queryString = ":lt(#{mostOuterTokenListIndex}).right-end:last" if side == 'left'
+      mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(startIndex, side)
+      queryString = ":gt(#{mostOuterTokenIndex}).left-end:first" if side == 'right'
+      queryString = ":lt(#{mostOuterTokenIndex}).right-end:last" if side == 'left'
       nextChunkId = $("#{tokensQuery}#{queryString}").data('token-id')
 
     unless nextChunkId
-      queryString = "#{tokensQuery}.left-end:first" if side == 'right'
-      queryString = "#{tokensQuery}.left-end:last" if side == 'left'
-      nextChunkId = $(queryString).data('token-id')
+      queryString = ".left-end:first" if side == 'right'
+      queryString = ".left-end:last" if side == 'left'
+      nextChunkId = $("#{tokensQuery}#{queryString}").data('token-id')
 
-    return nextChunkId
+    nextChunkId
 
   tokenIsChunk: ($token) ->
     tokenIndex = $token.data('token-id')
-    return tokenIndex >= 0
+    tokenIndex >= 0
+
+  # tokenIsInChunk: (tokenIndex, indexOfChunkMember) ->
+  #   leftBound = this.getMostOuterTokenIndexFromChunk(indexOfChunkMember, 'left')
+  #   rightBound = this.getMostOuterTokenIndexFromChunk(indexOfChunkMember, 'right')
+  #   leftBound <= tokenIndex <= rightBound
+
+  selectionOfDeletableTokensFrom: (side) ->
+    leftBound = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, 'left')
+    rightBound = this.getMostOuterTokenIndexFromChunk(this.selectedTokenIndex, 'right')
+    return undefined if rightBound == leftBound # a token can not be removed from this chunk
+
+    return this.$tokens.slice(leftBound, rightBound) if side == 'left'
+    this.$tokens.slice(leftBound + 1, rightBound + 1) # if side == 'right'
 
   tokensBelongToSameChunk: (indexA, indexB) ->
     mostOuterIndexA = this.getMostOuterTokenIndexFromChunk(indexA, 'left')
@@ -301,6 +342,21 @@ class ner_complete extends AnnotationIteration
     if leftSiblingIndex >= 0
       leftSibling = this.tokens[leftSiblingIndex]
       leftSibling.rightSiblingIndex = index
+
+
+  registerEventListener: (selection, eventName) ->
+    this.registeredEventListeners.push({
+      selection: selection,
+      eventName: eventName
+    })
+
+  removeRegisteredEventListeners: ->
+    for listener in this.registeredEventListeners
+      listener.selection.off(listener.eventName)
+
+  theOtherWayAround: (side) ->
+    return 'right' if side == 'left'
+    'left'
 
   render: (template, data) ->
     window.annotationDocumentPayload = data

@@ -172,6 +172,11 @@ class ner_complete extends AnnotationIteration
     targetIndex = if side == 'left' then mostOuterTokenIndex - 1 else mostOuterTokenIndex + 1
     return if targetIndex < 0 || targetIndex >= this.$tokens.length
 
+    # check if target index is chainabel
+    $targetToken = this.$tokens.get(targetIndex)
+    $chainableTokens = $('.token', mostOuterToken.$token.parent())
+    return unless $chainableTokens.filter($targetToken).length
+
     mostOuterToken.$token.removeClass("#{side}-end")
     $token = $(this.$tokens.get(targetIndex))
     this.removeChunkWithIndex(targetIndex) if $token.data('token-id') >= 0

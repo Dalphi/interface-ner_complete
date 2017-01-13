@@ -14,7 +14,7 @@ The *NER complete* interfaces recognises the following commands:
 		- on an annotated token: select this token (chunk of belonging tokens)
 
 - **keyboard commands** work on currently selected tokens (chunk of tokens)
-	- backspace: remove the annotation
+	- backspace / delete: remove the annotation
 	- 1: annotate as "PER"
 	- 2: annotate as "COM"
 	- tab: change the token selection to the right / to the bottom
@@ -23,6 +23,8 @@ The *NER complete* interfaces recognises the following commands:
 	- right arrow + shift: shrink the annotation by removing the right most outer token
 	- left arrow: extend the annotation with the next token to the left
 	- left arrow + shift: shrink the annotation by removing the left most outer token
+	- enter: save the document and load the next one
+	- escape: skip this document
 
 See the [issue list](https://github.com/Dalphi/interface-ner_complete/issues) for upcoming features or to create a new issue if a necessary interaction is missing.
 

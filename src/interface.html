@@ -11,8 +11,11 @@
     color symbology:
   </div>
   <div class="col-xs-12 col-sm-10 color-symbology">
-    <span class="token PER">Person Label</span>
-    <span class="token COM">Company Label</span>
+    {{#label_set}}
+      {{#.}}
+        <span class="token label-color-{{id}}" data-label="{{label}}">{{name}}</span>
+      {{/.}}
+    {{/label_set}}
   </div>
 </div>
 

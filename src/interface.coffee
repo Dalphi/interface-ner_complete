@@ -225,7 +225,7 @@ class ner_complete extends AnnotationIteration
       $tokenToRemove.removeClass("#{side}-end")
       this.tokens[siblingIndex].$token.addClass("#{side}-end")
 
-    this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == mostOuterTokenIndex
+    this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == indexToRemove
 
   removeChunkWithIndex: (tokenIndex) ->
     mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(tokenIndex, 'left')
@@ -391,7 +391,7 @@ class ner_complete extends AnnotationIteration
         $('.token', $(sentenceElement)).each (_, tokenElement) ->
           $token = $(tokenElement)
           tokenHash = {
-            term: $token.html().replace(/^\s+|\s+$/g, '')
+            term: $token.find('.term').html().replace(/^\s+|\s+$/g, '')
           }
 
           tokenId = $token.data('token-id')

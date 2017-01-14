@@ -14,6 +14,7 @@ class ner_complete extends AnnotationIteration
     this.currentDraggingStartedAtTokenIndex = -1
     this.preventClickOnToken = false
     this.registeredEventListeners = []
+    this.lastUsedLabel = 'PER'
 
     # iterate over all tokens and save them in an array
     this.initTokens()
@@ -156,10 +157,10 @@ class ner_complete extends AnnotationIteration
       lastIndex = clickedTokenIndex unless additive
 
     # remove clicked chunk and hovered chunk
-    this.removeChunkWithIndex(this.selectedTokenIndex)
+    this.removeChunkWithIndex(this.selectedTokenIndex, false)
     unless this.tokensBelongToSameChunk(firstIndex, lastIndex)
-      this.removeChunkWithIndex(firstIndex) if clickedTokenIndex < hoveredTokenIndex
-      this.removeChunkWithIndex(lastIndex) if clickedTokenIndex > hoveredTokenIndex
+      this.removeChunkWithIndex(firstIndex, false) if clickedTokenIndex < hoveredTokenIndex
+      this.removeChunkWithIndex(lastIndex, false) if clickedTokenIndex > hoveredTokenIndex
 
     # build chunk from start to end
     this.addNewToken(this.tokens[firstIndex].$token, firstIndex)
@@ -194,7 +195,7 @@ class ner_complete extends AnnotationIteration
       this.tokens[targetIndex].leftSiblingIndex = mostOuterTokenIndex
 
   addNewToken: ($token, index) ->
-    _this.addTokenToList($token, 'PER', index, -1)
+    this.addTokenToList($token, this.lastUsedLabel, index, -1)
     $token.addClass('left-end')
     $token.addClass('right-end')
     this.changeChunkState(this.selectedTokenIndex, false)
@@ -227,11 +228,11 @@ class ner_complete extends AnnotationIteration
 
     this.selectedTokenIndex = siblingIndex if this.selectedTokenIndex == indexToRemove
 
-  removeChunkWithIndex: (tokenIndex) ->
+  removeChunkWithIndex: (tokenIndex, selectNextChunk=true) ->
     mostOuterTokenIndex = this.getMostOuterTokenIndexFromChunk(tokenIndex, 'left')
-    this.removeChunkWithStartIndex(mostOuterTokenIndex)
+    this.removeChunkWithStartIndex(mostOuterTokenIndex, selectNextChunk)
 
-  removeChunkWithStartIndex: (mostLeftOuterTokenIndex) ->
+  removeChunkWithStartIndex: (mostLeftOuterTokenIndex, selectNextChunk=true) ->
     modifier = (token, selected) ->
       token.$token.removeClass('PER COM left-end right-end selected')
       token.$token.data('token-id', -1)
@@ -242,7 +243,7 @@ class ner_complete extends AnnotationIteration
       leftSiblingIndex = -1
 
     this.tokenIterator(mostLeftOuterTokenIndex, modifier, false, false, true)
-    this.selectNextChunkWithIndexToStartFrom(mostLeftOuterTokenIndex)
+    this.selectNextChunkWithIndexToStartFrom(mostLeftOuterTokenIndex) if selectNextChunk
 
   selectNextChunk: (side) ->
     nextChunkId = this.findNextChunkIndex(this.selectedTokenIndex, side)
@@ -297,14 +298,18 @@ class ner_complete extends AnnotationIteration
   selectChunkWithTokenIndex: (index) ->
     this.changeChunkState(this.selectedTokenIndex, false)
     this.changeChunkState(index, true)
+    this.lastUsedLabel = this.tokens[index].kind
     this.selectedTokenIndex = index
+    index
 
-  getMostOuterTokenIndexFromChunk: (chunkMemberIndex, side) ->
-    token = this.tokens[chunkMemberIndex]
-    return chunkMemberIndex if side == 'left' && token.leftSiblingIndex == -1
-    return chunkMemberIndex if side == 'right' && token.rightSiblingIndex == -1
-    return this.getMostOuterTokenIndexFromChunk(token.leftSiblingIndex, side) if side == 'left'
-    return this.getMostOuterTokenIndexFromChunk(token.rightSiblingIndex, side) if side == 'right'
+  getMostOuterTokenIndexFromChunk: (mostOuterCandidate, side) ->
+    mostOuterCandidateToken = this.tokens[mostOuterCandidate]
+    return mostOuterCandidate if side == 'left' && mostOuterCandidateToken.leftSiblingIndex == -1
+    return mostOuterCandidate if side == 'right' && mostOuterCandidateToken.rightSiblingIndex == -1
+    if side == 'left'
+      return this.getMostOuterTokenIndexFromChunk(mostOuterCandidateToken.leftSiblingIndex, side)
+    if side == 'right'
+      return this.getMostOuterTokenIndexFromChunk(mostOuterCandidateToken.rightSiblingIndex, side)
 
   setCurrentAnnotationLength: (tokenIndex) ->
     this.currentAnnotationLength = 0
@@ -320,6 +325,7 @@ class ner_complete extends AnnotationIteration
     this.tokenIterator(tokenIndex, modifier, selected)
 
   changeTokenKind: (kind) ->
+    this.lastUsedLabel = kind
     return if this.selectedTokenIndex < 0
 
     modifier = (token, kind) ->

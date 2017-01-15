@@ -10,9 +10,12 @@
   <div class="col-xs-12 col-sm-2 marker">
     color symbology:
   </div>
-  <div class="col-xs-12 col-sm-10 color-symbology">
-    <span class="token PER">Person Label</span>
-    <span class="token COM">Company Label</span>
+  <div class="col-xs-12 col-sm-10 color-symbology label-set">
+    {{#label_set}}
+      {{#.}}
+        <span class="token label-{{id}}" data-id="{{id}}" data-label="{{label}}">{{name}}</span>
+      {{/.}}
+    {{/label_set}}
   </div>
 </div>
 

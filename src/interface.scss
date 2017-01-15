@@ -44,12 +44,12 @@
   padding: 0 2px 0 2px;
   position: relative;
 
-  &:not(.COM):not(.PER):hover {
+  &:not(.label-0):not(.label-1):not(.label-2):not(.label-3):hover {
     background-color: #ffffff;
     box-shadow: 0 0 10px 5px #ffffff;
   }
 
-  &.PER {
+  &.label-0 {
     background-color: #93B449;
 
     &.selected {
@@ -57,11 +57,27 @@
     }
   }
 
-  &.COM {
+  &.label-1 {
     background-color: #7A88A5;
 
     &.selected {
       background-color: #A4B7DE;
+    }
+  }
+
+  &.label-2 {
+    background-color: #EBAD2D;
+
+    &.selected {
+      background-color: #FFCD64;
+    }
+  }
+
+  &.label-3 {
+    background-color: #BF3865;
+
+    &.selected {
+      background-color: #FF4A87;
     }
   }
 

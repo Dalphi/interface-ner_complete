@@ -2,7 +2,7 @@
 
 This interface can be used to annotate annotation-documents for NER applications. Integrate it to your [DALPHI](https://github.com/Dalphi/dalphi) project by copy'n'pasteing the HTML / CoffeeScript / SCSS source codes.
 
-![screen shot 16-09-23](ScreenShot16-09-23.png)
+![screen shot 16-09-23](Bildschirmfoto2017-01-15.png)
 
 ## Interactions / how to use
 
@@ -57,7 +57,19 @@ All Dalphi interfaces expects payload to render. Payload for this interface must
         {"term": "."}
       ]
     ]
-  ]
+  ],
+  "label_set": [
+	  {
+	    "name": "A label name",
+	    "label": "INTERNAL_LABEL",
+	    "id": 0
+	  },
+	  {
+	    "name": "Another label name",
+	    "label": "INT_LAB_2",
+	    "id": 1
+	  }
+	]
 }
 ```
 An annotated token will have an `annotation` object, additionally to it's `term` value. This `annotation` object contains a `label` value to save your annotation and a `length` value, specifying how many following tokens this annotation has. The following example is an annotation of the two words "Jane Doe" as "PER":

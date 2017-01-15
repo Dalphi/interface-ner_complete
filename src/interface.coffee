@@ -9,26 +9,42 @@ class ner_complete extends AnnotationIteration
     this.$tokens = $(tokensQuery)
     this.tokens = []
     this.selectedTokenIndex = -1
-    this.knownKeys = [8, 9, 13, 16, 27, 37, 39, 46, 49, 50]
+    this.knownKeys = [8, 9, 13, 16, 27, 37, 39, 46, 49, 50, 51, 52]
     this.keyMap = []
     this.currentDraggingStartedAtTokenIndex = -1
     this.preventClickOnToken = false
     this.registeredEventListeners = []
-    this.lastUsedLabel = 'PER'
+    this.knownLabels = {}
+    this.lastUsedLabel = ''
 
     # iterate over all tokens and save them in an array
+    this.initLabels()
     this.initTokens()
     this.initKeyboardEventHandler()
     this.initMouseEventHandler()
 
     super
 
+  initLabels: ->
+    $('.label-set .token').each (_, element) ->
+      $label = $(element)
+      id = "label-#{$label.data('id')}"
+      label = $label.data('label')
+      _this.knownLabels[id] = label
+      _this.lastUsedLabel = id unless _this.lastUsedLabel
+
   initTokens: ->
     this.iterationMemory = { count: 0, kind: '', leftSiblingIndex: -1 }
     this.$tokens.each (index, element) ->
       $token = $(element)
-      kind = 'COM' if $token.hasClass('COM')
-      kind = 'PER' if $token.hasClass('PER')
+
+      # set correct label-id
+      for internalLabel, externalLabel of _this.knownLabels
+        if $token.hasClass(externalLabel)
+          $token.removeClass(externalLabel)
+          $token.addClass(internalLabel)
+          kind = internalLabel
+          break
 
       # this is a subsequent annotation
       if _this.iterationMemory.count > 0
@@ -139,8 +155,10 @@ class ner_complete extends AnnotationIteration
       _this.selectNextChunk('left') if keyIsPressed(9) # key 'tab'
 
     else
-      _this.changeTokenKind('PER') if keyIsPressed(49) # key '1'
-      _this.changeTokenKind('COM') if keyIsPressed(50) # key '2'
+      _this.changeTokenKind('label-0') if keyIsPressed(49) # key '1'
+      _this.changeTokenKind('label-1') if keyIsPressed(50) # key '2'
+      _this.changeTokenKind('label-2') if keyIsPressed(51) # key '3'
+      _this.changeTokenKind('label-3') if keyIsPressed(52) # key '4'
       _this.addTokenToChunk('left') if keyIsPressed(37) # key '<-'
       _this.addTokenToChunk('right') if keyIsPressed(39) # key '->'
       _this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
@@ -234,7 +252,7 @@ class ner_complete extends AnnotationIteration
 
   removeChunkWithStartIndex: (mostLeftOuterTokenIndex, selectNextChunk=true) ->
     modifier = (token, selected) ->
-      token.$token.removeClass('PER COM left-end right-end selected')
+      token.$token.removeClass('label-0 label-1 label-2 label-3 left-end right-end selected')
       token.$token.data('token-id', -1)
       leftSiblingIndex = token.leftSiblingIndex
       if leftSiblingIndex >= 0
@@ -331,8 +349,7 @@ class ner_complete extends AnnotationIteration
     modifier = (token, kind) ->
       unless token.kind == kind
         token.kind = kind
-        token.$token.removeClass('PER') if kind == 'COM'
-        token.$token.removeClass('COM') if kind == 'PER'
+        token.$token.removeClass('label-0 label-1 label-2 label-3')
         token.$token.addClass(kind)
     this.tokenIterator(this.selectedTokenIndex, modifier, kind)
 
@@ -403,8 +420,9 @@ class ner_complete extends AnnotationIteration
           tokenId = $token.data('token-id')
           if tokenId >= 0 && _this.tokenSkipCount == 0
             _this.tokenSkipCount = (_this.setCurrentAnnotationLength(tokenId) - 1)
+            tokenKind = _this.tokens[tokenId].kind
             tokenHash['annotation'] = {
-              label: _this.tokens[tokenId].kind,
+              label: _this.knownLabels[tokenKind],
               length: _this.currentAnnotationLength
             }
             annotatedTokens.push(tokenHash) # debug

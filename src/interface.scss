@@ -44,12 +44,12 @@
   padding: 0 2px 0 2px;
   position: relative;
 
-  &:not(.label-color-1):not(.label-color-2):not(.label-color-3):not(.label-color-4):hover {
+  &:not(.label-0):not(.label-1):not(.label-2):not(.label-3):hover {
     background-color: #ffffff;
     box-shadow: 0 0 10px 5px #ffffff;
   }
 
-  &.label-color-1 {
+  &.label-0 {
     background-color: #93B449;
 
     &.selected {
@@ -57,7 +57,7 @@
     }
   }
 
-  &.label-color-2 {
+  &.label-1 {
     background-color: #7A88A5;
 
     &.selected {
@@ -65,7 +65,7 @@
     }
   }
 
-  &.label-color-3 {
+  &.label-2 {
     background-color: #EBAD2D;
 
     &.selected {
@@ -73,7 +73,7 @@
     }
   }
 
-  &.label-color-4 {
+  &.label-3 {
     background-color: #BF3865;
 
     &.selected {

@@ -17,7 +17,6 @@ class ner_complete extends AnnotationIteration
     this.knownLabels = {}
     this.lastUsedLabel = ''
 
-    # iterate over all tokens and save them in an array
     this.initLabels()
     this.initTokens()
     this.initKeyboardEventHandler()
@@ -26,7 +25,7 @@ class ner_complete extends AnnotationIteration
     super
 
   initLabels: ->
-    $('.label-set .token').each (_, element) ->
+    $('.interfaces-staging >:not(.template) .label-set .token').each (_, element) ->
       $label = $(element)
       id = "label-#{$label.data('id')}"
       label = $label.data('label')
@@ -138,30 +137,32 @@ class ner_complete extends AnnotationIteration
     keyIsPressed = (keyId) ->
       _this.keyMap.indexOf(keyId) >= 0
 
-    _this.saveAnnotation() if keyIsPressed(13) # enter
-    _this.skip() if keyIsPressed(27) # escape
+    this.saveAnnotation() if keyIsPressed(13) # enter
+    this.skip() if keyIsPressed(27) # escape
 
     # all other bindings require a token to be selected
     return if this.selectedTokenIndex < 0
 
     # backspace or delete
     if keyIsPressed(8) || keyIsPressed(46)
-      _this.removeChunkWithIndex(this.selectedTokenIndex)
+      this.removeChunkWithIndex(this.selectedTokenIndex)
 
     # shift
     if keyIsPressed(16)
-      _this.removeTokenFromChunk('left') if keyIsPressed(37) # key '->'
-      _this.removeTokenFromChunk('right') if keyIsPressed(39) # key '->'
-      _this.selectNextChunk('left') if keyIsPressed(9) # key 'tab'
+      this.removeTokenFromChunk('left') if keyIsPressed(37) # key '->'
+      this.removeTokenFromChunk('right') if keyIsPressed(39) # key '->'
+      this.selectNextChunk('left') if keyIsPressed(9) # key 'tab'
 
     else
-      _this.changeTokenKind('label-0') if keyIsPressed(49) # key '1'
-      _this.changeTokenKind('label-1') if keyIsPressed(50) # key '2'
-      _this.changeTokenKind('label-2') if keyIsPressed(51) # key '3'
-      _this.changeTokenKind('label-3') if keyIsPressed(52) # key '4'
-      _this.addTokenToChunk('left') if keyIsPressed(37) # key '<-'
-      _this.addTokenToChunk('right') if keyIsPressed(39) # key '->'
-      _this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
+      this.addTokenToChunk('left') if keyIsPressed(37) # key '<-'
+      this.addTokenToChunk('right') if keyIsPressed(39) # key '->'
+      this.selectNextChunk('right') if keyIsPressed(9) # key 'tab'
+
+      knownLabelsCount = Object.keys(this.knownLabels).length
+      this.changeTokenKind('label-0') if keyIsPressed(49) # key '1'
+      this.changeTokenKind('label-1') if keyIsPressed(50) && knownLabelsCount >= 2 # key '2'
+      this.changeTokenKind('label-2') if keyIsPressed(51) && knownLabelsCount >= 3 # key '3'
+      this.changeTokenKind('label-3') if keyIsPressed(52) && knownLabelsCount == 4 # key '4'
 
   createChunkWithTokens: (clickedTokenIndex, hoveredTokenIndex, additive=false) ->
     # find first / last and check if one or both belong to a chunk (and get real first / last indices)

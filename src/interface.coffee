@@ -37,6 +37,9 @@ class ner_complete extends AnnotationIteration
         _this.lastUsedLabel = id
         $label.addClass('selected left-end right-end')
 
+      $label.click ->
+        _this.changeTokenKind(id)
+
   initTokens: ->
     this.iterationMemory = { count: 0, kind: '', leftSiblingIndex: -1 }
     this.$tokens.each (index, element) ->
@@ -92,7 +95,7 @@ class ner_complete extends AnnotationIteration
       _this.keyMap.splice(keyMapIndex)
 
   initMouseEventHandler: ->
-    $('.interfaces-staging .token').mousedown ->
+    this.$tokens.mousedown ->
       $clickedToken = $(this)
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
       $leftHandle = $clickedToken.find('.chunk-size-handle-left')
@@ -351,7 +354,6 @@ class ner_complete extends AnnotationIteration
     this.lastUsedLabel = id
     $currentlyActive = this.knownLabels[id].$label
     $currentlyActive.addClass('selected left-end right-end')
-    console.log 'now using label', id
 
   changeChunkState: (tokenIndex, selected) ->
     modifier = (token, selected) ->

@@ -28,9 +28,17 @@ class ner_complete extends AnnotationIteration
     $('.interfaces-staging >:not(.template) .label-set .token').each (_, element) ->
       $label = $(element)
       id = "label-#{$label.data('id')}"
-      label = $label.data('label')
-      _this.knownLabels[id] = label
-      _this.lastUsedLabel = id unless _this.lastUsedLabel
+      _this.knownLabels[id] = {
+        acronym: $label.data('label'),
+        $label: $label
+      }
+
+      unless _this.lastUsedLabel
+        _this.lastUsedLabel = id
+        $label.addClass('selected left-end right-end')
+
+      $label.click ->
+        _this.changeTokenKind(id)
 
   initTokens: ->
     this.iterationMemory = { count: 0, kind: '', leftSiblingIndex: -1 }
@@ -38,11 +46,12 @@ class ner_complete extends AnnotationIteration
       $token = $(element)
 
       # set correct label-id
-      for internalLabel, externalLabel of _this.knownLabels
-        if $token.hasClass(externalLabel)
-          $token.removeClass(externalLabel)
-          $token.addClass(internalLabel)
-          kind = internalLabel
+      for labelId, label of _this.knownLabels
+        labelAcronym = label.acronym
+        if $token.hasClass(labelAcronym)
+          $token.removeClass(labelAcronym)
+          $token.addClass(labelId)
+          kind = labelId
           break
 
       # this is a subsequent annotation
@@ -86,7 +95,7 @@ class ner_complete extends AnnotationIteration
       _this.keyMap.splice(keyMapIndex)
 
   initMouseEventHandler: ->
-    $('.interfaces-staging .token').mousedown ->
+    this.$tokens.mousedown ->
       $clickedToken = $(this)
       clickedTokenIndex = _this.selectChunkWithToken($clickedToken)
       $leftHandle = $clickedToken.find('.chunk-size-handle-left')
@@ -317,7 +326,8 @@ class ner_complete extends AnnotationIteration
   selectChunkWithTokenIndex: (index) ->
     this.changeChunkState(this.selectedTokenIndex, false)
     this.changeChunkState(index, true)
-    this.lastUsedLabel = this.tokens[index].kind
+
+    this.useLabel(this.tokens[index].kind)
     this.selectedTokenIndex = index
     index
 
@@ -337,6 +347,14 @@ class ner_complete extends AnnotationIteration
     this.tokenIterator(tokenIndex, modifier, false)
     this.currentAnnotationLength
 
+  useLabel: (id) ->
+    $formerlyActive = this.knownLabels[this.lastUsedLabel].$label
+    $formerlyActive.removeClass('selected left-end right-end')
+
+    this.lastUsedLabel = id
+    $currentlyActive = this.knownLabels[id].$label
+    $currentlyActive.addClass('selected left-end right-end')
+
   changeChunkState: (tokenIndex, selected) ->
     modifier = (token, selected) ->
       token.$token.addClass('selected') if selected
@@ -344,7 +362,7 @@ class ner_complete extends AnnotationIteration
     this.tokenIterator(tokenIndex, modifier, selected)
 
   changeTokenKind: (kind) ->
-    this.lastUsedLabel = kind
+    this.useLabel(kind)
     return if this.selectedTokenIndex < 0
 
     modifier = (token, kind) ->
@@ -423,7 +441,7 @@ class ner_complete extends AnnotationIteration
             _this.tokenSkipCount = (_this.setCurrentAnnotationLength(tokenId) - 1)
             tokenKind = _this.tokens[tokenId].kind
             tokenHash['annotation'] = {
-              label: _this.knownLabels[tokenKind],
+              label: _this.knownLabels[tokenKind].acronym,
               length: _this.currentAnnotationLength
             }
             annotatedTokens.push(tokenHash) # debug

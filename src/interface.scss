@@ -44,7 +44,20 @@
   padding: 0 2px 0 2px;
   position: relative;
 
-  &:not(.label-0):not(.label-1):not(.label-2):not(.label-3):hover {
+  &.label-0,
+  &.label-1,
+  &.label-2,
+  &.label-3,
+  &.label-4,
+  &.label-5,
+  &.label-6,
+  &.label-7,
+  &.label-8,
+  &.label-9 {
+    color: #ffffff;
+  }
+
+  &:not(.label-0):not(.label-1):not(.label-2):not(.label-3):not(.label-4):not(.label-5):not(.label-6):not(.label-7):not(.label-8):not(.label-9):hover {
     background-color: #ffffff;
     box-shadow: 0 0 10px 5px #ffffff;
   }
@@ -78,6 +91,54 @@
 
     &.selected {
       background-color: #FF4A87;
+    }
+  }
+
+  &.label-4 {
+    background-color: #AA40BA;
+
+    &.selected {
+      background-color: #D38FE8;
+    }
+  }
+
+  &.label-5 {
+    background-color: #5A3DD1;
+
+    &.selected {
+      background-color: #8b71f5;
+    }
+  }
+
+  &.label-6 {
+    background-color: #389AAD;
+
+    &.selected {
+      background-color: #69C6D9;
+    }
+  }
+
+  &.label-7 {
+    background-color: #38A678;
+
+    &.selected {
+      background-color: #56D4A2;
+    }
+  }
+
+  &.label-8 {
+    background-color: #28A122;
+
+    &.selected {
+      background-color: #64E35F;
+    }
+  }
+
+  &.label-9 {
+    background-color: #C4B234;
+
+    &.selected {
+      background-color: #e3d36f;
     }
   }
 

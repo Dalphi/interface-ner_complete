@@ -2,6 +2,7 @@ class ner_complete extends AnnotationIteration
 
   _this = undefined
   tokensQuery = '.interfaces-staging >:not(.template) .paragraph-container .token'
+  allLabels = 'label-0 label-1 label-2 label-3 label-4 label-5 label-6 label-7 label-8 label-9'
 
   # uncomment to overwrite interface registration at AnnotationLifecylce
   constructor: ->
@@ -9,7 +10,7 @@ class ner_complete extends AnnotationIteration
     this.$tokens = $(tokensQuery)
     this.tokens = []
     this.selectedTokenIndex = -1
-    this.knownKeys = [8, 9, 13, 16, 27, 37, 39, 46, 49, 50, 51, 52]
+    this.knownKeys = [8, 9, 13, 16, 27, 37, 39, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57]
     this.keyMap = []
     this.currentDraggingStartedAtTokenIndex = -1
     this.preventClickOnToken = false
@@ -171,7 +172,13 @@ class ner_complete extends AnnotationIteration
       this.changeTokenKind('label-0') if keyIsPressed(49) # key '1'
       this.changeTokenKind('label-1') if keyIsPressed(50) && knownLabelsCount >= 2 # key '2'
       this.changeTokenKind('label-2') if keyIsPressed(51) && knownLabelsCount >= 3 # key '3'
-      this.changeTokenKind('label-3') if keyIsPressed(52) && knownLabelsCount == 4 # key '4'
+      this.changeTokenKind('label-3') if keyIsPressed(52) && knownLabelsCount >= 4 # key '4'
+      this.changeTokenKind('label-4') if keyIsPressed(53) && knownLabelsCount >= 5 # key '5'
+      this.changeTokenKind('label-5') if keyIsPressed(54) && knownLabelsCount >= 6 # key '6'
+      this.changeTokenKind('label-6') if keyIsPressed(55) && knownLabelsCount >= 7 # key '7'
+      this.changeTokenKind('label-7') if keyIsPressed(56) && knownLabelsCount >= 8 # key '8'
+      this.changeTokenKind('label-8') if keyIsPressed(57) && knownLabelsCount >= 9 # key '9'
+      this.changeTokenKind('label-9') if keyIsPressed(48) && knownLabelsCount == 10 # key '0'
 
   createChunkWithTokens: (clickedTokenIndex, hoveredTokenIndex, additive=false) ->
     # find first / last and check if one or both belong to a chunk (and get real first / last indices)
@@ -262,7 +269,7 @@ class ner_complete extends AnnotationIteration
 
   removeChunkWithStartIndex: (mostLeftOuterTokenIndex, selectNextChunk=true) ->
     modifier = (token, selected) ->
-      token.$token.removeClass('label-0 label-1 label-2 label-3 left-end right-end selected')
+      token.$token.removeClass("#{allLabels} left-end right-end selected")
       token.$token.data('token-id', -1)
       leftSiblingIndex = token.leftSiblingIndex
       if leftSiblingIndex >= 0
@@ -368,7 +375,7 @@ class ner_complete extends AnnotationIteration
     modifier = (token, kind) ->
       unless token.kind == kind
         token.kind = kind
-        token.$token.removeClass('label-0 label-1 label-2 label-3')
+        token.$token.removeClass(allLabels)
         token.$token.addClass(kind)
     this.tokenIterator(this.selectedTokenIndex, modifier, kind)
 
@@ -414,6 +421,10 @@ class ner_complete extends AnnotationIteration
     'left'
 
   render: (template, data) ->
+    console.log 'interface render is called'
+    data.label_set.sort (a, b) ->
+      a.id - b.id
+
     window.annotationDocumentPayload = data
     super
 
